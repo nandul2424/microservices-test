@@ -53,7 +53,10 @@
       <button id="paymentBtn" onclick="callBackend('payment')">Call Payment Service</button>
     </div>
 
-    <pre id="output">Click a button to call a backend service…</pre>
+    <pre id="output">Click a button to call a backend service…
+
+      The backend service will respond with its HTTP status code and a JSON body.
+    </pre>
 
     <script>
       async function callBackend(service) {
