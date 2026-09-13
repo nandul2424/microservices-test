@@ -64,18 +64,23 @@ pipeline {
             steps {
                 echo 'Updating Kubernetes manifest and deploying to AKS...'
 
+                // Single-quoted sh strings: the kubeconfig secret and env vars are
+                // expanded by the SHELL (not interpolated into the Groovy string,
+                // which Jenkins flags as insecure). "$KUBECONFIG_FILE" is quoted so
+                // the workspace path with spaces isn't split into multiple args.
+
                 // Ensure the target namespace exists (idempotent).
-                sh "kubectl --kubeconfig=${KUBECONFIG_FILE} create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl --kubeconfig=${KUBECONFIG_FILE} apply -f -"
+                sh 'kubectl --kubeconfig="$KUBECONFIG_FILE" create namespace "$K8S_NAMESPACE" --dry-run=client -o yaml | kubectl --kubeconfig="$KUBECONFIG_FILE" apply -f -'
 
                 // Substitute ACR_URL / IMAGE_NAME / IMAGE_TAG into the manifest
                 // that ships with this repo (k8s/frontend.yaml).
-                sh "envsubst < k8s/frontend.yaml > generated_deployment.yaml"
+                sh 'envsubst < k8s/frontend.yaml > generated_deployment.yaml'
 
                 // Apply the deployment to the cluster.
-                sh "kubectl --kubeconfig=${KUBECONFIG_FILE} apply -f generated_deployment.yaml"
+                sh 'kubectl --kubeconfig="$KUBECONFIG_FILE" apply -f generated_deployment.yaml'
 
                 // Wait for the rollout to finish so a bad image fails the build.
-                sh "kubectl --kubeconfig=${KUBECONFIG_FILE} -n ${K8S_NAMESPACE} rollout status deployment/frontend-service --timeout=120s"
+                sh 'kubectl --kubeconfig="$KUBECONFIG_FILE" -n "$K8S_NAMESPACE" rollout status deployment/frontend-service --timeout=120s'
             }
         }
     }
