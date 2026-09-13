@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-service
+  namespace: microservices-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          # Built from this repo and pushed to your ACR by the Jenkins pipeline.
+          # Templated for CI/CD: `envsubst` injects the ACR login server, image
+          # name and build tag before `kubectl apply`.
+          # Resolves to e.g. nandul24dockerimages1.azurecr.io/microservices-frontend-ui:42
+          # AKS pulls this via its AcrPull managed identity (no imagePullSecrets needed).
+          image: ${ACR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+          ports:
+            - containerPort: 8080
+          # Backend Service DNS names injected as env vars. The frontend pod
+          # reads these and forwards button clicks to the right backend.
+          # Short names work because everything is in the same namespace.
+          env:
+            - name: PORT
+              value: "8080"
+            - name: BACKEND_AUTH_URL
+              value: "http://backend-auth:3000"
+            - name: BACKEND_PAYMENT_URL
+              value: "http://backend-payment:5000"
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "48Mi"
+            limits:
+              cpu: "150m"
+              memory: "192Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: microservices-test
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 8080
