@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Microservices Demo Frontend</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 60px auto;
+        padding: 0 20px;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      h1 { font-size: 1.6rem; }
+      p.sub { color: #94a3b8; margin-top: -8px; }
+      .buttons { display: flex; gap: 12px; margin: 24px 0; }
+      button {
+        flex: 1;
+        padding: 14px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        color: #fff;
+      }
+      #authBtn { background: #2563eb; }
+      #paymentBtn { background: #16a34a; }
+      button:hover { opacity: 0.9; }
+      pre {
+        background: #1e293b;
+        padding: 16px;
+        border-radius: 10px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        min-height: 60px;
+      }
+      .ok { color: #4ade80; }
+      .err { color: #f87171; }
+    </style>
+  </head>
+  <body>
+    <h1>Microservices Demo Frontend</h1>
+    <p class="sub">
+      Each button asks this frontend pod to call a backend Service inside AKS and
+      shows the response.
+    </p>
+
+    <div class="buttons">
+      <button id="authBtn" onclick="callBackend('auth')">Call Auth Service</button>
+      <button id="paymentBtn" onclick="callBackend('payment')">Call Payment Service</button>
+    </div>
+
+    <pre id="output">Click a button to call a backend service…</pre>
+
+    <script>
+      async function callBackend(service) {
+        const output = document.getElementById("output");
+        output.textContent = "Calling " + service + " service…";
+        try {
+          const res = await fetch("/api/" + service);
+          const data = await res.json();
+          if (data.error) {
+            output.innerHTML =
+              '<span class="err">ERROR calling ' +
+              data.service +
+              " (" +
+              data.target +
+              "): " +
+              data.error +
+              "</span>";
+          } else {
+            output.innerHTML =
+              '<span class="ok">[' +
+              data.service.toUpperCase() +
+              "] " +
+              data.target +
+              " → HTTP " +
+              data.upstreamStatus +
+              "</span>\n\n" +
+              data.body;
+          }
+        } catch (e) {
+          output.innerHTML = '<span class="err">Request failed: ' + e.message + "</span>";
+        }
+      }
+    </script>
+  </body>
+</html>

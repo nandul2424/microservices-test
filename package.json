@@ -1,0 +1,12 @@
+{
+  "name": "microservices-frontend",
+  "version": "1.0.0",
+  "description": "Demo frontend that proxies requests to the auth and payment backend services inside AKS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
